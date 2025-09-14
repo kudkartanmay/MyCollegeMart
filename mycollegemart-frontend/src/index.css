@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  @apply bg-white text-slate-900 transition-colors duration-200;
+}
+
+/* Dark mode overrides */
+.dark body {
+  @apply bg-slate-900 text-white;
+}
+
+/* Make sure content is properly styled in dark mode */
+.dark .bg-white {
+  @apply bg-slate-800;
+}
+
+.dark .border-slate-200 {
+  @apply border-slate-700;
+}
