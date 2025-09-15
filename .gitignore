@@ -1,6 +1,17 @@
+# Ignore IDE settings
+.idea/
+.vscode/
+
+# Ignore dependencies
 node_modules/
 .cache/
+dist/
+build/
+out/
 
+# Ignore system files
+.DS_Store
+Thumbs.db
 
 # Node/React
 mycollegemart-frontend/node_modules/
@@ -22,3 +33,4 @@ mycollegemart-backend/.settings/
 .idea/
 
 *.swp
+
