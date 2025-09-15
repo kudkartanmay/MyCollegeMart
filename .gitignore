@@ -1,24 +1,29 @@
-# Ignore IDE settings
+# ---------------------------
+# IDE / Editor settings
+# ---------------------------
 .idea/
 .vscode/
+*.iml
+*.swp
 
-# Ignore dependencies
-node_modules/
-.cache/
-dist/
-build/
-out/
-
-# Ignore system files
+# ---------------------------
+# Logs & system files
+# ---------------------------
+*.log
 .DS_Store
 Thumbs.db
 
-# Node/React
+# ---------------------------
+# Node / React (Frontend)
+# ---------------------------
 mycollegemart-frontend/node_modules/
+mycollegemart-frontend/.cache/
 mycollegemart-frontend/build/
 mycollegemart-frontend/.env
 
-# Java/Spring Boot
+# ---------------------------
+# Java / Spring Boot (Backend)
+# ---------------------------
 mycollegemart-backend/target/
 mycollegemart-backend/.env
 mycollegemart-backend/.idea/
@@ -26,11 +31,9 @@ mycollegemart-backend/.classpath
 mycollegemart-backend/.project
 mycollegemart-backend/.settings/
 
-# OS/Editor
-.DS_Store
-*.iml
-*.log
-.idea/
-
-*.swp
-
+# ---------------------------
+# General build outputs
+# ---------------------------
+dist/
+build/
+out/
