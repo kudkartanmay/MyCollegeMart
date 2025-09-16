@@ -1,12 +1,8 @@
 package com.mycollegemart.backend.util;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,45 +18,49 @@ public class JwtUtil {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
     private final long EXPIRATION_TIME;
-    private final SecretKey key;
+    private final SecretKey key; // ✅ A secure, cryptographic key object.
 
-    // Use constructor injection for required properties
+    /**
+     * ✅ BEST PRACTICE: Use constructor injection to receive configuration properties.
+     * This ensures the utility is correctly configured upon creation.
+     */
     public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration}") long expiration) {
         this.EXPIRATION_TIME = expiration;
-        // Create a secure key from the secret string. This is the modern, required approach.
+
+        // ✅ FIX: Create a cryptographically secure key from the secret string.
+        // The old method of passing a raw string is deprecated and insecure.
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Generates a JWT for a given user.
+     */
     public String generateToken(Long userId, String email) {
         return Jwts.builder()
-                .subject(String.valueOf(userId))
-                .claim("email", email)
+                .subject(String.valueOf(userId)) // The subject is the user's ID
+                .claim("email", email) // Add email as a custom claim
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key) // Use the secure SecretKey object
+                .signWith(key) // ✅ Sign with the secure SecretKey object
                 .compact();
     }
 
+    /**
+     * Validates the JWT and extracts the user ID (the subject).
+     */
     public String validateAndGetUserId(String token) {
         try {
-            // Use the new parser builder to validate the token with the same key
+            // ✅ FIX: Use the modern builder pattern to parse and verify the token.
             Claims claims = Jwts.parser()
-                    .verifyWith(key)
+                    .verifyWith(key) // Verify the signature with the same key
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
             return claims.getSubject();
-        } catch (ExpiredJwtException e) {
-            logger.warn("JWT expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            logger.warn("Unsupported JWT: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            logger.warn("Malformed JWT: {}", e.getMessage());
-        } catch (SignatureException e) {
-            logger.warn("Invalid JWT signature: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.warn("JWT claims string is empty: {}", e.getMessage());
+        } catch (Exception e) {
+            // Log the specific error for easier debugging.
+            logger.warn("Invalid JWT token: {}", e.getMessage());
+            return null; // Return null if validation fails for any reason.
         }
-        return null;
     }
 }
