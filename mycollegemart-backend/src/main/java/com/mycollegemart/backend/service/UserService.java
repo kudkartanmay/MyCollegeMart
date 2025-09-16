@@ -1,40 +1,45 @@
 package com.mycollegemart.backend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.mycollegemart.backend.model.User;
 import com.mycollegemart.backend.repository.UserRepository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    // Field is now 'final' because it will be set in the constructor
+    private final UserRepository userRepository;
 
+    // Use constructor injection
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
-    public User findOrCreateGoogleUser(String email, String name) {
+    public User findOrCreateGoogleUser(String email, String name, String googleId) {
         Optional<User> existingUser = userRepository.findByEmail(email);
 
         if (existingUser.isPresent()) {
-            return existingUser.get();
+            User user = existingUser.get();
+            if (user.getGoogleId() == null || user.getGoogleId().isEmpty()) {
+                user.setGoogleId(googleId);
+                return userRepository.save(user);
+            }
+            return user;
         }
 
-        // Create new user for Google login
-        User user = new User();
-        user.setEmail(email);
-        user.setDisplayName(name);
-        // Generate a secure random password for Google users
-        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.setPrimeMember(false);
-        user.setPrimeExpiryDate(null);
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setDisplayName(name);
+        newUser.setGoogleId(googleId);
+        newUser.setPassword(null);
+        newUser.setPrimeMember(false);
+        newUser.setPrimeExpiryDate(null);
 
-        return userRepository.save(user);
+        return userRepository.save(newUser);
     }
 
     public User findById(String idStr) {

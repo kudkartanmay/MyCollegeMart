@@ -2,7 +2,6 @@ package com.mycollegemart.backend.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +10,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "users")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,8 +19,7 @@ public class User {
     @Email
     private String email;
 
-    @Column(nullable = false)
-    @Size(min = 8)
+    @Column(nullable = true)
     private String password;
 
     private String displayName;
@@ -28,4 +27,7 @@ public class User {
     private boolean isPrimeMember;
 
     private String primeExpiryDate;
+
+    // This field must be present
+    private String googleId;
 }

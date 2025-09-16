@@ -53,6 +53,11 @@ const Login = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
+  const handleGoogleError = () => {
+    console.error("Google Login Failed");
+    setError("Google sign-in failed");
+  };
+
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-start bg-slate-100 dark:bg-slate-900 pt-10 transition-colors">
       <motion.div
@@ -108,12 +113,11 @@ const Login = ({ onNavigate }) => {
         <div className="w-full">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.error("Google Login Failed");
-              setError("Google sign-in failed");
-            }}
-            useOneTap
-            width="100%"
+            onError={handleGoogleError}
+            width={300} // Use numeric value instead of percentage
+            text="signin_with"
+            shape="rectangular"
+            theme="filled_blue"
           />
         </div>
       </motion.div>

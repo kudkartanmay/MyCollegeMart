@@ -25,12 +25,13 @@ import com.mycollegemart.backend.model.User;
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    // ⚠️ Make sure this matches your Web Client ID from Google Cloud Console
     private static final String GOOGLE_CLIENT_ID = "30561089880-65f9jvksmah2ki6k6fkolb7rijqcmmo7.apps.googleusercontent.com";
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    // Constructor injection instead of field injection
     @Autowired
     public AuthController(UserService userService, JwtUtil jwtUtil) {
         this.userService = userService;
@@ -40,56 +41,72 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
         String token = body.get("token");
+
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Missing Google token in request body");
+        }
+
         try {
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                     GoogleNetHttpTransport.newTrustedTransport(),
-                    GsonFactory.getDefaultInstance()) // Using GsonFactory instead of deprecated JacksonFactory
+                    GsonFactory.getDefaultInstance())
                     .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
                     .build();
 
             GoogleIdToken idToken = verifier.verify(token);
-            if (idToken != null) {
-                GoogleIdToken.Payload payload = idToken.getPayload();
-                String email = payload.getEmail();
-                String name = (String) payload.get("name");
 
-                // Find or create user in DB
-                User user = userService.findOrCreateGoogleUser(email, name);
-
-                // Generate JWT
-                String jwt = jwtUtil.generateToken(user.getId(), user.getEmail());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("token", jwt);
-                response.put("email", user.getEmail());
-                response.put("name", user.getDisplayName());
-                response.put("id", user.getId());
-                response.put("isPrimeMember", user.isPrimeMember());
-                response.put("primeExpiryDate", user.getPrimeExpiryDate());
-
-                return ResponseEntity.ok(response);
-            } else {
+            if (idToken == null) {
+                logger.warn("Google token verification failed: Invalid or expired token");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
             }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            // CHANGE: Get the unique Google User ID from the token's "subject"
+            String googleId = payload.getSubject();
+
+            logger.info("Google login successful for email: {}", email);
+
+            // Find or create user in DB using all three details
+            // CHANGE: Pass googleId to the service
+            User user = userService.findOrCreateGoogleUser(email, name, googleId);
+
+            // Generate JWT for our app
+            String jwt = jwtUtil.generateToken(user.getId(), user.getEmail());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", jwt);
+            response.put("email", user.getEmail());
+            response.put("name", user.getDisplayName());
+            response.put("id", user.getId());
+            response.put("isPrimeMember", user.isPrimeMember());
+            response.put("primeExpiryDate", user.getPrimeExpiryDate());
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            // Use proper logging instead of printStackTrace
-            logger.error("Google sign-in failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google sign-in failed: " + e.getMessage());
+            // Log the exact error for debugging
+            logger.error("Google sign-in failed. Cause: {}", e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Google sign-in failed: " + e.getMessage());
         }
     }
 
     @GetMapping("/user")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(name="Authorization", required=false) String authHeader) {
+    public ResponseEntity<?> getCurrentUser(@RequestHeader(name = "Authorization", required = false) String authHeader) {
         try {
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid token");
             }
 
             String token = authHeader.substring(7);
             String userId = jwtUtil.validateAndGetUserId(token);
 
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid JWT");
             }
 
             User user = userService.findById(userId);
@@ -106,7 +123,7 @@ public class AuthController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Failed to fetch user", e);
+            logger.error("Failed to fetch user. Cause: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch user");
         }
     }

@@ -65,6 +65,11 @@ const Signup = ({ onNavigate }) => {
     setIsLoading(false);
   };
 
+  const handleGoogleError = () => {
+    console.error("Google Sign-Up Failed");
+    setError("Google sign-up failed");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 transition-colors">
       <motion.div
@@ -120,13 +125,11 @@ const Signup = ({ onNavigate }) => {
         <div className="w-full">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => {
-              console.error("Google Sign-Up Failed");
-              setError("Google sign-up failed");
-            }}
-            useOneTap
-            width="100%"
-            text="signup_with" // Change button text to "Sign up with Google"
+            onError={handleGoogleError}
+            width={300} // Use numeric value instead of percentage
+            text="signup_with"
+            shape="rectangular"
+            theme="filled_blue"
           />
         </div>
         <div className="mt-4 text-center">
