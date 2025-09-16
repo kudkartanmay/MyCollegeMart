@@ -19,9 +19,38 @@ api.interceptors.request.use(config => {
 });
 
 export const auth = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
-  getCurrentUser: () => api.get('/auth/user')
+  login: async (credentials) => {
+    try {
+      const response = await api.post('/auth/login', credentials);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Login failed");
+    }
+  },
+  register: async (userData) => {
+    try {
+      const response = await api.post('/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Registration failed");
+    }
+  },
+  getCurrentUser: async () => {
+    try {
+      const response = await api.get('/auth/user');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Failed to fetch user");
+    }
+  },
+  googleLogin: async ({ token }) => {
+    try {
+      const response = await api.post('/auth/google', { token });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Google sign-in failed");
+    }
+  },
 };
 
 export const products = {

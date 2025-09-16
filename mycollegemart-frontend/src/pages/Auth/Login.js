@@ -1,11 +1,57 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { GoogleIcon } from '../../components/UI/Icons';
+import { GoogleLogin } from '@react-oauth/google';
+import { useGlobalState, actionTypes } from '../../context/GlobalStateContext';
+import { auth } from '../../utils/api';
 
 const Login = ({ onNavigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { dispatch } = useGlobalState();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await auth.login({ email, password });
+      localStorage.setItem('token', response.token);
+      
+      // Fetch user profile and update global state
+      const userProfile = await auth.getCurrentUser();
+      dispatch({ type: actionTypes.SET_USER, payload: userProfile });
+      
+      window.location.href = '/';
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.message);
+    }
+    setIsLoading(false);
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      console.log("Google credential received:", credentialResponse);
+      
+      // Send the Google token to your backend
+      const response = await auth.googleLogin({ token: credentialResponse.credential });
+      localStorage.setItem('token', response.token);
+      
+      // Fetch user profile and update global state
+      const userProfile = await auth.getCurrentUser();
+      dispatch({ type: actionTypes.SET_USER, payload: userProfile });
+      
+      window.location.href = '/';
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError(err.message || "Google sign-in failed");
+    }
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-start bg-slate-100 dark:bg-slate-900 pt-10 transition-colors">
@@ -13,14 +59,15 @@ const Login = ({ onNavigate }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-sm p-6 border border-slate-300 dark:border-slate-700 rounded-lg"
+        className="w-full max-w-sm p-6 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800"
       >
         <h1 className="text-2xl font-medium text-slate-900 dark:text-white mb-4">Sign in</h1>
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
             <input
               type="email"
+              name="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -31,6 +78,7 @@ const Login = ({ onNavigate }) => {
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Password</label>
             <input
               type="password"
+              name="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
@@ -39,10 +87,12 @@ const Login = ({ onNavigate }) => {
           </div>
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-900 font-medium shadow-sm border border-amber-500"
+            disabled={isLoading}
+            className="w-full py-2 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-900 font-medium shadow-sm border border-amber-500 disabled:opacity-50"
           >
-            Continue
+            {isLoading ? 'Signing in...' : 'Continue'}
           </button>
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </form>
         <p className="text-xs text-slate-600 dark:text-slate-400 mt-4">
           By continuing, you agree to MyCollegeMart's Conditions of Use and Privacy Notice.
@@ -52,23 +102,20 @@ const Login = ({ onNavigate }) => {
             <div className="w-full border-t border-slate-300 dark:border-slate-600" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-slate-900 text-slate-500">or</span>
+            <span className="px-2 bg-white dark:bg-slate-800 text-slate-500">or</span>
           </div>
         </div>
-        <button
-          // REMOVE any usage of signInWithGoogle()
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-        >
-          {isLoading ? (
-            <span className="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"/>
-          ) : (
-            <GoogleIcon />
-          )}
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            {isLoading ? 'Signing in...' : 'Sign in with Google'}
-          </span>
-        </button>
+        <div className="w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              console.error("Google Login Failed");
+              setError("Google sign-in failed");
+            }}
+            useOneTap
+            width="100%"
+          />
+        </div>
       </motion.div>
       <div className="mt-4 text-center">
         <p className="text-sm text-slate-600 dark:text-slate-400">New to MyCollegeMart?</p>
