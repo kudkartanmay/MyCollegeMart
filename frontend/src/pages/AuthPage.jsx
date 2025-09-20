@@ -3,7 +3,10 @@ import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
 function AuthPage() {
-    const [isLoginView, setIsLoginView] = useState(true);
+    // This state now controls if we are in "Login" or "Sign Up" mode.
+    // We'll start in "Sign Up" mode.
+    const [isLoginView, setIsLoginView] = useState(false);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -23,7 +26,7 @@ function AuthPage() {
             const response = await axios.post(endpoint, payload);
             alert(isLoginView ? 'Login successful!' : 'Registration successful!');
             console.log(response.data);
-            // TODO: Save the token and redirect
+            // TODO: Save token and redirect
         } catch (error) {
             alert(isLoginView ? 'Login failed!' : 'Registration failed!');
             console.error(error);
@@ -31,47 +34,83 @@ function AuthPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-secondary">
-            <div className="max-w-md w-full mx-auto p-8 bg-white rounded-xl shadow-2xl">
-                <h2 className="text-3xl font-bold mb-6 text-center text-primary">
-                    {isLoginView ? 'Welcome Back' : 'Create Your Account'}
-                </h2>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg">
+                <div>
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        {isLoginView ? 'Sign in to your account' : 'Create your account'}
+                    </h2>
+                </div>
 
-                {/* Email/Password Form */}
-                <form onSubmit={handleSubmit}>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {/* The "Name" field will only show up if we are in "Sign Up" mode */}
                     {!isLoginView && (
-                        <div className="mb-4">
-                            <label className="block text-gray-700 font-semibold mb-2">Name</label>
-                            <input type="text" name="name" onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required />
+                        <div>
+                            <label htmlFor="name" className="sr-only">Name</label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                onChange={handleChange}
+                                required
+                                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                                placeholder="Name"
+                            />
                         </div>
                     )}
-                    <div className="mb-4">
-                        <label className="block text-gray-700 font-semibold mb-2">Email</label>
-                        <input type="email" name="email" onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required />
+
+                    <div>
+                        <label htmlFor="email-address" className="sr-only">Email address</label>
+                        <input
+                            id="email-address"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            onChange={handleChange}
+                            required
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                            placeholder="Email address"
+                        />
                     </div>
-                    <div className="mb-6">
-                        <label className="block text-gray-700 font-semibold mb-2">Password</label>
-                        <input type="password" name="password" onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" required />
+                    <div>
+                        <label htmlFor="password" className="sr-only">Password</label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autoComplete="current-password"
+                            onChange={handleChange}
+                            required
+                            className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                            placeholder="Password"
+                        />
                     </div>
-                    <button type="submit" className="w-full bg-accent text-white font-bold py-3 rounded-lg hover:bg-orange-500 transition-all">
-                        {isLoginView ? 'Login' : 'Create Account'}
-                    </button>
+
+                    <div>
+                        <button
+                            type="submit"
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                        >
+                            {isLoginView ? 'Sign in' : 'Create Account'}
+                        </button>
+                    </div>
                 </form>
 
-                <div className="mt-4 text-center">
-                    <button onClick={() => setIsLoginView(!isLoginView)} className="text-sm text-blue-600 hover:underline">
-                        {isLoginView ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
+                <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">
+            OR
+          </span>
+                </div>
+
+                <div className="mt-6">
+                    <GoogleLoginButton />
+                </div>
+
+                <div className="text-sm text-center">
+                    <button onClick={() => setIsLoginView(!isLoginView)} className="font-medium text-orange-600 hover:text-orange-500">
+                        {isLoginView ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                     </button>
                 </div>
-
-                <div className="my-6 flex items-center">
-                    <div className="flex-grow border-t border-gray-300"></div>
-                    <span className="flex-shrink mx-4 text-gray-400">OR</span>
-                    <div className="flex-grow border-t border-gray-300"></div>
-                </div>
-
-                {/* Google Login Button */}
-                <GoogleLoginButton />
             </div>
         </div>
     );
