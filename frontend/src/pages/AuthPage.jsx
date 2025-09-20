@@ -1,5 +1,5 @@
 import {useAuth} from '../context/AuthContext';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useLocation} from 'react-router-dom';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton';
@@ -8,8 +8,15 @@ function AuthPage() {
     const {login} = useAuth();
     const location = useLocation();
 
-    // Initialize the state based on the navigation, but allow it to be updated locally.
-    const [isLoginView, setIsLoginView] = useState(location.state?.isLogin);
+    // Default to login if no state provided
+    const [isLoginView, setIsLoginView] = useState(location.state?.isLogin ?? true);
+
+    // Sync state with location changes (Navbar Login/Sign Up clicks)
+    useEffect(() => {
+        if (location.state?.isLogin !== undefined) {
+            setIsLoginView(location.state.isLogin);
+        }
+    }, [location.state]);
 
     const [formData, setFormData] = useState({
         name: '',
