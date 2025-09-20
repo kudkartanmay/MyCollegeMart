@@ -1,12 +1,16 @@
-import { useAuth } from '../context/AuthContext';
-import React, { useState } from 'react';
+import {useAuth} from '../context/AuthContext';
+import React, {useState} from 'react';
+import {useLocation} from 'react-router-dom';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
 function AuthPage() {
-    const { login } = useAuth(); // 2. Get the login function from the context
+    const {login} = useAuth();
+    const location = useLocation();
 
-    const [isLoginView, setIsLoginView] = useState(false);
+    // Initialize the state based on the navigation, but allow it to be updated locally.
+    const [isLoginView, setIsLoginView] = useState(location.state?.isLogin);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -14,33 +18,28 @@ function AuthPage() {
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormData({...formData, [e.target.name]: e.target.value});
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
-        const payload = isLoginView ? { email: formData.email, password: formData.password } : formData;
+        const payload = isLoginView ? {email: formData.email, password: formData.password} : formData;
 
         try {
             const response = await axios.post(endpoint, payload);
 
-            // 3. If the action was a login, save the token using our context function
             if (isLoginView) {
                 login(response.data.accessToken);
             }
 
             alert(isLoginView ? 'Login successful!' : 'Registration successful!');
-
-            // 4. Redirect the user to the homepage after success
             window.location.href = '/';
 
         } catch (error) {
-            // Check if the error response from the backend has a specific message
             if (error.response && error.response.data) {
-                alert(error.response.data); // Display the backend's message
+                alert(error.response.data);
             } else {
-                // Otherwise, show a generic message
                 alert(isLoginView ? 'Login failed!' : 'Registration failed!');
             }
             console.error(error);
@@ -120,7 +119,8 @@ function AuthPage() {
                 </div>
 
                 <div className="text-sm text-center">
-                    <button onClick={() => setIsLoginView(!isLoginView)} className="font-medium text-orange-600 hover:text-orange-500">
+                    <button onClick={() => setIsLoginView(!isLoginView)}
+                            className="font-medium text-orange-600 hover:text-orange-500">
                         {isLoginView ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                     </button>
                 </div>
