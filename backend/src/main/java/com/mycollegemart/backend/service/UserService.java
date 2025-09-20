@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
-
+import java.util.Optional;
 /**
  * Service class containing business logic for user authentication.
  */
@@ -41,11 +41,31 @@ public class UserService {
 
     /**
      * Handles standard user registration with an encrypted password.
+     * This method is now smarter to handle existing Google users.
      */
     public User registerUser(User user) {
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
-        return userRepository.save(user);
+        // Check if a user with this email already exists
+        Optional<User> existingUserOpt = userRepository.findByEmail(user.getEmail());
+
+        if (existingUserOpt.isPresent()) {
+            User existingUser = existingUserOpt.get();
+
+            // If the user exists but has no password, they signed up with Google first.
+            // Let's link their new password to their existing account.
+            if (existingUser.getPassword() == null) {
+                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+                // You could also update their name if they provide a new one
+                existingUser.setName(user.getName());
+                return userRepository.save(existingUser);
+            } else {
+                // If they already have a password, the email is truly taken.
+                throw new IllegalStateException("Email already registered. Please log in.");
+            }
+        } else {
+            // If no user exists with that email, create a new one.
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            return userRepository.save(user);
+        }
     }
 
     /**
@@ -82,7 +102,6 @@ public class UserService {
         String email = payload.getEmail();
         String originalName = (String) payload.get("name");
 
-        // --- THIS IS THE FIX ---
         // Create a final variable for the name to be used in the lambda.
         final String finalName;
         if (originalName == null || originalName.isEmpty()) {
@@ -90,8 +109,6 @@ public class UserService {
         } else {
             finalName = originalName;
         }
-        // --- END OF FIX ---
-
 
         // Find an existing user by their Google ID or email, or create a new one
         User user = userRepository.findByGoogleId(googleId)

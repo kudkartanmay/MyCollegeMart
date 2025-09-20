@@ -1,11 +1,16 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Export the context so the hook can use it
-export const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
-// This is the provider component
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(localStorage.getItem('authToken'));
+    const [token, setToken] = useState(() => localStorage.getItem('authToken'));
+
+    useEffect(() => {
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            setToken(storedToken);
+        }
+    }, []);
 
     const login = (newToken) => {
         setToken(newToken);
@@ -23,4 +28,9 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
+};
+
+// The hook is now back in the same file
+export const useAuth = () => {
+    return useContext(AuthContext);
 };

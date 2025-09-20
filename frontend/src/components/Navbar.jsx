@@ -1,10 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth'; // 1. Import the useAuth hook
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-    // 2. Get the token and logout function from our AuthContext
-    const { token, logout } = useAuth();
+    // 1. Get the entire auth object from the hook first.
+    const auth = useAuth();
+
+    // 2. Add a safety check. If the context is not ready yet, render nothing.
+    if (!auth) {
+        return null;
+    }
+
+    // 3. Now that we know 'auth' exists, we can safely get 'token' and 'logout'.
+    const { token, logout } = auth;
 
     return (
         <nav className="bg-primary text-white p-4 shadow-lg">
@@ -13,7 +21,6 @@ function Navbar() {
                     MyCollege<span className="text-accent">Mart</span>
                 </Link>
                 <div className="space-x-6">
-                    {/* 3. Conditionally render links based on the token's existence */}
                     {token ? (
                         // If the user is logged in, show a Logout button
                         <button

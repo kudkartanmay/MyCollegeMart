@@ -1,21 +1,23 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
-function GoogleLoginButton() {
+// The component now accepts an 'isLoginView' prop to change its text
+function GoogleLoginButton({ isLoginView }) {
+    const { login } = useAuth();
+
     const handleGoogleSuccess = async (credentialResponse) => {
-        console.log("Google response:", credentialResponse);
         const idToken = credentialResponse.credential;
-
         try {
-            // Send the Google ID token to your backend
+            // Send the Google ID token to your backend (this will now work)
             const response = await axios.post('/api/auth/google', { token: idToken });
-            console.log("Backend response:", response.data);
 
-            // Here you would typically save the JWT from your backend and redirect the user
+            // Save the JWT from our backend and redirect
+            login(response.data.accessToken);
             alert("Login successful!");
-            // Example: localStorage.setItem('token', response.data.accessToken);
-            // Example: window.location.href = '/';
+            window.location.href = '/';
+
         } catch (error) {
             console.error("Login failed:", error);
             alert("Google login failed. Please try again.");
@@ -28,11 +30,15 @@ function GoogleLoginButton() {
     };
 
     return (
-        <div className="mt-4 flex justify-center">
+        <div className="flex justify-center">
+            {/* Using the official button that provides the correct token,
+          but we can customize the text for the user's experience */}
             <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
-                useOneTap
+                text={isLoginView ? 'signin_with' : 'signup_with'} // This changes the text
+                theme="outline"
+                size="large"
             />
         </div>
     );

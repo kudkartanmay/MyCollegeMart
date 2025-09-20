@@ -25,12 +25,17 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegistrationDto registrationDto) {
-        User newUser = new User();
-        newUser.setName(registrationDto.getName());
-        newUser.setEmail(registrationDto.getEmail());
-        newUser.setPassword(registrationDto.getPassword());
-        userService.registerUser(newUser);
-        return ResponseEntity.ok("User registered successfully!");
+        try {
+            User newUser = new User();
+            newUser.setName(registrationDto.getName());
+            newUser.setEmail(registrationDto.getEmail());
+            newUser.setPassword(registrationDto.getPassword());
+            userService.registerUser(newUser);
+            return ResponseEntity.ok("User registered successfully!");
+        } catch (IllegalStateException e) {
+            // If the service throws our specific exception, return a 409 Conflict
+            return ResponseEntity.status(409).body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")

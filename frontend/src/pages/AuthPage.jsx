@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth'; // 1. Import the useAuth hook
+import { useAuth } from '../context/AuthContext';
 import React, { useState } from 'react';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton';
@@ -36,7 +36,13 @@ function AuthPage() {
             window.location.href = '/';
 
         } catch (error) {
-            alert(isLoginView ? 'Login failed!' : 'Registration failed!');
+            // Check if the error response from the backend has a specific message
+            if (error.response && error.response.data) {
+                alert(error.response.data); // Display the backend's message
+            } else {
+                // Otherwise, show a generic message
+                alert(isLoginView ? 'Login failed!' : 'Registration failed!');
+            }
             console.error(error);
         }
     };
@@ -110,7 +116,7 @@ function AuthPage() {
                 </div>
 
                 <div className="mt-6">
-                    <GoogleLoginButton />
+                    <GoogleLoginButton isLoginView={isLoginView}/>
                 </div>
 
                 <div className="text-sm text-center">
