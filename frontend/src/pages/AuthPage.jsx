@@ -1,12 +1,12 @@
+import { useAuth } from '../hooks/useAuth'; // 1. Import the useAuth hook
 import React, { useState } from 'react';
 import axios from 'axios';
 import GoogleLoginButton from '../components/GoogleLoginButton';
 
 function AuthPage() {
-    // This state now controls if we are in "Login" or "Sign Up" mode.
-    // We'll start in "Sign Up" mode.
-    const [isLoginView, setIsLoginView] = useState(false);
+    const { login } = useAuth(); // 2. Get the login function from the context
 
+    const [isLoginView, setIsLoginView] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -24,9 +24,17 @@ function AuthPage() {
 
         try {
             const response = await axios.post(endpoint, payload);
+
+            // 3. If the action was a login, save the token using our context function
+            if (isLoginView) {
+                login(response.data.accessToken);
+            }
+
             alert(isLoginView ? 'Login successful!' : 'Registration successful!');
-            console.log(response.data);
-            // TODO: Save token and redirect
+
+            // 4. Redirect the user to the homepage after success
+            window.location.href = '/';
+
         } catch (error) {
             alert(isLoginView ? 'Login failed!' : 'Registration failed!');
             console.error(error);
@@ -43,7 +51,6 @@ function AuthPage() {
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {/* The "Name" field will only show up if we are in "Sign Up" mode */}
                     {!isLoginView && (
                         <div>
                             <label htmlFor="name" className="sr-only">Name</label>
@@ -97,9 +104,9 @@ function AuthPage() {
                 </form>
 
                 <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">
-            OR
-          </span>
+                  <span className="px-2 bg-white text-gray-500">
+                    OR
+                  </span>
                 </div>
 
                 <div className="mt-6">

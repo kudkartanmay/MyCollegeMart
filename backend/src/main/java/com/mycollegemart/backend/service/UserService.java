@@ -63,28 +63,41 @@ public class UserService {
      * @param tokenString The ID token received from the frontend.
      * @return An application-specific JWT for the user.
      */
+
     public String processGoogleLogin(String tokenString) throws GeneralSecurityException, IOException {
-        // Build a verifier to validate the token against our Google Client ID.
+        // Verifier to check the token's validity
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList(googleClientId))
                 .build();
 
+        // Verify the token
         GoogleIdToken idToken = verifier.verify(tokenString);
         if (idToken == null) {
             throw new IllegalArgumentException("Invalid Google token");
         }
 
-        // Extract user details from the token's payload.
+        // Extract user information from the token payload
         GoogleIdToken.Payload payload = idToken.getPayload();
         String googleId = payload.getSubject();
         String email = payload.getEmail();
-        String name = (String) payload.get("name");
+        String originalName = (String) payload.get("name");
 
-        // Find user by Google ID or email. If they don't exist, create a new account.
+        // --- THIS IS THE FIX ---
+        // Create a final variable for the name to be used in the lambda.
+        final String finalName;
+        if (originalName == null || originalName.isEmpty()) {
+            finalName = email.split("@")[0];
+        } else {
+            finalName = originalName;
+        }
+        // --- END OF FIX ---
+
+
+        // Find an existing user by their Google ID or email, or create a new one
         User user = userRepository.findByGoogleId(googleId)
                 .or(() -> userRepository.findByEmail(email))
                 .map(existingUser -> {
-                    // Link existing account if it's their first time using Google Sign-In.
+                    // If user exists but googleId is null, link the account
                     if (existingUser.getGoogleId() == null) {
                         existingUser.setGoogleId(googleId);
                         return userRepository.save(existingUser);
@@ -92,12 +105,12 @@ public class UserService {
                     return existingUser;
                 })
                 .orElseGet(() -> {
-                    // Create a new user if no account is found.
-                    User newUser = new User(name, email, googleId);
+                    // If no user is found, create a new one using the finalName variable.
+                    User newUser = new User(finalName, email, googleId);
                     return userRepository.save(newUser);
                 });
 
-        // Generate and return our own JWT for the session.
+        // Generate a JWT for our application for the logged-in user
         return jwtUtil.generateToken(user.getEmail());
     }
 }

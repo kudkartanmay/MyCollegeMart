@@ -3,8 +3,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
-import AuthPage from './pages/AuthPage'; // Import the new page
+import AuthPage from './pages/AuthPage';
+import ProductListPage from './pages/ProductListPage'; // 1. Import this page
 
 function App() {
     const [googleClientId, setGoogleClientId] = useState(null);
@@ -32,8 +32,8 @@ function App() {
                     <Navbar />
                     <main>
                         <Routes>
-                            <Route path="/" element={<HomePage />} />
-                            {/* Both login and register are handled here now */}
+                            {/* 2. Change this line to show the product list on the homepage */}
+                            <Route path="/" element={<ProductListPage />} />
                             <Route path="/auth" element={<AuthPage />} />
                         </Routes>
                     </main>
